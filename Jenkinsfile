@@ -20,9 +20,9 @@ spec:
     image: docker:24.0-cli
     command: ["cat"]
     tty: true
-    env:
-    - name: DOCKER_HOST
-      value: tcp://localhost:2375
+    volumeMounts:
+    - mountPath: /var/run/docker.sock
+      name: docker-sock
   - name: kubectl
     image: bitnami/kubectl:latest
     command: ["cat"]

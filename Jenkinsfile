@@ -17,8 +17,8 @@ spec:
     command: ["cat"]
     tty: true
   - name: kaniko
-    image: gcr.io/kaniko-project/executor:latest
-    command: ["cat"]
+    image: gcr.io/kaniko-project/executor:debug
+    command: ["busybox", "sleep", "99999"]
     tty: true
   - name: kubectl
     image: bitnami/kubectl:latest

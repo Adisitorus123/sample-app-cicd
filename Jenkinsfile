@@ -18,7 +18,7 @@ spec:
     tty: true
   - name: dind
     image: docker:24.0-dind
-    command: ["dockerd", "--host=tcp://0.0.0.0:2375"]
+    args: ["--host=tcp://0.0.0.0:2375"]
     tty: true
     privileged: true
   - name: docker
@@ -74,6 +74,11 @@ spec:
             steps {
                 container('docker') {
                     sh """
+                        for i in \$(seq 1 30); do
+                            docker info && break
+                            echo "Menunggu Docker daemon... \$i"
+                            sleep 2
+                        done
                         docker build -t ${DOCKER_REGISTRY}/${APP_NAME}:${APP_VERSION} .
                         docker tag ${DOCKER_REGISTRY}/${APP_NAME}:${APP_VERSION} ${DOCKER_REGISTRY}/${APP_NAME}:latest
                     """

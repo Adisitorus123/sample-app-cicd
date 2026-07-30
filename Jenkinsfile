@@ -16,21 +16,22 @@ spec:
     image: node:18-alpine
     command: ["cat"]
     tty: true
+  - name: dind
+    image: docker:24.0-dind
+    command: ["dockerd", "--host=tcp://0.0.0.0:2375"]
+    tty: true
+    privileged: true
   - name: docker
     image: docker:24.0-cli
     command: ["cat"]
     tty: true
-    volumeMounts:
-    - mountPath: /var/run/docker.sock
-      name: docker-sock
+    env:
+    - name: DOCKER_HOST
+      value: tcp://localhost:2375
   - name: kubectl
     image: bitnami/kubectl:latest
     command: ["cat"]
     tty: true
-  volumes:
-  - name: docker-sock
-    hostPath:
-      path: /var/run/docker.sock
 """
             defaultContainer 'node'
         }

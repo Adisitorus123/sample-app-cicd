@@ -124,9 +124,6 @@ spec:
     }
 
     post {
-        always {
-            deleteDir()
-        }
         failure {
             echo 'Pipeline gagal! Periksa log untuk detail.'
         }

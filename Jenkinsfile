@@ -33,7 +33,7 @@ spec:
     command: ["cat"]
     tty: true
 """
-            defaultContainer 'node'
+            defaultContainer 'jnlp'
         }
     }
 
@@ -60,13 +60,17 @@ spec:
 
         stage('Install Dependencies') {
             steps {
-                sh 'npm ci'
+                container('node') {
+                    sh 'npm ci'
+                }
             }
         }
 
         stage('Run Tests') {
             steps {
-                sh 'npm test'
+                container('node') {
+                    sh 'npm test'
+                }
             }
         }
 

@@ -49,20 +49,19 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-            steps {
-                sh """
-                    sed -i 's|BUILD_VERSION|${APP_VERSION}|g' k8s/deployment.yaml
-                    sed -i 's|DOCKER_REGISTRY|${DOCKER_REGISTRY}|g' k8s/deployment.yaml
-                """
-                sh """
-                    kubectl apply -f k8s/deployment.yaml
-                    kubectl apply -f k8s/service.yaml
-                """
-                sh 'kubectl rollout status deployment/${APP_NAME} -n ${K8S_NAMESPACE}'
-            }
+    steps {
+        withCredentials([file(credentialsId: 'kube-config', variable: 'KUBECONFIG')]) {
+            sh """
+                sed -i 's|BUILD_VERSION|${APP_VERSION}|g' k8s/deployment.yaml
+                sed -i 's|DOCKER_REGISTRY|${DOCKER_REGISTRY}|g' k8s/deployment.yaml
+
+                kubectl apply -f k8s/deployment.yaml --kubeconfig=$KUBECONFIG
+                kubectl apply -f k8s/service.yaml --kubeconfig=$KUBECONFIG
+                kubectl rollout status deployment/${APP_NAME} -n ${K8S_NAMESPACE} --kubeconfig=$KUBECONFIG
+            """
         }
     }
-
+}
     post {
         always {
             cleanWs()

@@ -115,7 +115,6 @@ spec:
                             sed -i 's|BUILD_VERSION|${APP_VERSION}|g' k8s/deployment.yaml
                             sed -i 's|DOCKER_REGISTRY|${DOCKER_REGISTRY}|g' k8s/deployment.yaml
                             kubectl apply -f k8s/deployment.yaml
-                            kubectl apply -f k8s/service.yaml
                             kubectl rollout status deployment/${APP_NAME} -n ${K8S_NAMESPACE}
                         """
                     }

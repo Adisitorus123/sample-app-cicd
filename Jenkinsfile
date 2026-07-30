@@ -16,10 +16,19 @@ spec:
     image: node:18-alpine
     command: ["cat"]
     tty: true
-  - name: kaniko
-    image: gcr.io/kaniko-project/executor:debug
-    command: ["busybox", "sleep", "99999"]
+  - name: dind
+    image: docker:24.0-dind
+    args: ["--host=tcp://0.0.0.0:2375"]
     tty: true
+    securityContext:
+      privileged: true
+  - name: docker
+    image: docker:24.0-cli
+    command: ["cat"]
+    tty: true
+    env:
+    - name: DOCKER_HOST
+      value: tcp://localhost:2375
   - name: kubectl
     image: bitnami/kubectl:latest
     command: ["cat"]
@@ -66,25 +75,29 @@ spec:
             }
         }
 
-        stage('Build & Push Docker Image') {
+        stage('Build Docker Image') {
             steps {
-                container('kaniko') {
-                    withCredentials([usernamePassword(
-                        credentialsId: 'docker-hub-credentials',
-                        usernameVariable: 'DOCKER_USER',
-                        passwordVariable: 'DOCKER_PASS'
-                    )]) {
+                container('docker') {
+                    sh """
+                        for i in \$(seq 1 30); do
+                            docker info && break
+                            echo "Menunggu Docker daemon... \$i"
+                            sleep 2
+                        done
+                        docker build -t ${DOCKER_REGISTRY}/${APP_NAME}:${APP_VERSION} .
+                        docker tag ${DOCKER_REGISTRY}/${APP_NAME}:${APP_VERSION} ${DOCKER_REGISTRY}/${APP_NAME}:latest
+                    """
+                }
+            }
+        }
+
+        stage('Push Docker Image') {
+            steps {
+                container('docker') {
+                    withDockerRegistry([credentialsId: 'docker-hub-credentials', url: '']) {
                         sh """
-                            mkdir -p /kaniko/.docker
-                            cat > /kaniko/.docker/config.json <<EOF2
-                    {"auths":{"https://index.docker.io/v1/":{"username":"${DOCKER_USER}","password":"${DOCKER_PASS}"}}}
-                    EOF2
-                            /kaniko/executor \
-                              --context=. \
-                              --dockerfile=Dockerfile \
-                              --destination=${DOCKER_REGISTRY}/${APP_NAME}:${APP_VERSION} \
-                              --destination=${DOCKER_REGISTRY}/${APP_NAME}:latest \
-                              --cache=false
+                            docker push ${DOCKER_REGISTRY}/${APP_NAME}:${APP_VERSION}
+                            docker push ${DOCKER_REGISTRY}/${APP_NAME}:latest
                         """
                     }
                 }

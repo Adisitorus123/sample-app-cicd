@@ -12,7 +12,13 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                checkout([$class: 'GitSCM',
+                    userRemoteConfigs: [[
+                        url: "${GIT_REPO}",
+                        credentialsId: 'github-credentials'
+                    ]],
+                    branches: [[name: '*/main']]
+                ])
             }
         }
 
@@ -49,19 +55,21 @@ pipeline {
         }
 
         stage('Deploy to Kubernetes') {
-    steps {
-        withCredentials([file(credentialsId: 'kube-config', variable: 'KUBECONFIG')]) {
-            sh """
-                sed -i 's|BUILD_VERSION|${APP_VERSION}|g' k8s/deployment.yaml
-                sed -i 's|DOCKER_REGISTRY|${DOCKER_REGISTRY}|g' k8s/deployment.yaml
+            steps {
+                withCredentials([file(credentialsId: 'kube-config', variable: 'KUBECONFIG')]) {
+                    sh """
+                        sed -i 's|BUILD_VERSION|${APP_VERSION}|g' k8s/deployment.yaml
+                        sed -i 's|DOCKER_REGISTRY|${DOCKER_REGISTRY}|g' k8s/deployment.yaml
 
-                kubectl apply -f k8s/deployment.yaml --kubeconfig=$KUBECONFIG
-                kubectl apply -f k8s/service.yaml --kubeconfig=$KUBECONFIG
-                kubectl rollout status deployment/${APP_NAME} -n ${K8S_NAMESPACE} --kubeconfig=$KUBECONFIG
-            """
+                        kubectl apply -f k8s/deployment.yaml --kubeconfig=$KUBECONFIG
+                        kubectl apply -f k8s/service.yaml --kubeconfig=$KUBECONFIG
+                        kubectl rollout status deployment/${APP_NAME} -n ${K8S_NAMESPACE} --kubeconfig=$KUBECONFIG
+                    """
+                }
+            }
         }
-    }
-}
+    } 
+
     post {
         always {
             cleanWs()
@@ -73,4 +81,4 @@ pipeline {
             echo 'Pipeline berhasil! Aplikasi sudah di-deploy ke Kubernetes.'
         }
     }
-}
+} 

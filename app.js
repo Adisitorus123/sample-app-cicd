@@ -8,7 +8,7 @@ app.get('/health', (req, res) => {
 
 app.get('/', (req, res) => {
   res.json({
-    message: 'Hello from Kube Playground!',
+    message: 'Hello from Kube Playground! versi 2',
     version: process.env.APP_VERSION || '1.0.0',
     host: require('os').hostname()
   });
